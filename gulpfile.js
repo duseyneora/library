@@ -1,27 +1,36 @@
-const { src, dest, watch, series } = require('gulp');
+var gulp          = require('gulp');
+var browserSync   = require('browser-sync').create();
+var $             = require('gulp-load-plugins')();
+var autoprefixer  = require('autoprefixer');
 
-const sass = require('gulp-sass')(require('sass'));
-const prefixer = require('gulp-autoprefixer');
-const cssmin = require('gulp-clean-css');
-const terser = require('gulp-terser');
+var sassPaths = [
+  'node_modules/foundation-sites/scss',
+  'node_modules/motion-ui/src'
+];
 
-const scss = () => {
-    return src('./frontend/src/styles/**/*.scss')
-        .pipe(sass())
-        .pipe(prefixer('last 2 versions'))
-        .pipe(cssmin())
-        .pipe(dest('./frontend/dist/styles'))
+function sass() {
+  return gulp.src('scss/app.scss')
+    .pipe($.sass({
+      includePaths: sassPaths,
+      outputStyle: 'compressed' // if css compressed **file size**
+    })
+      .on('error', $.sass.logError))
+    .pipe($.postcss([
+      autoprefixer()
+    ]))
+    .pipe(gulp.dest('css'))
+    .pipe(browserSync.stream());
+};
+
+function serve() {
+  browserSync.init({
+    server: "./"
+  });
+
+  gulp.watch("scss/*.scss", sass);
+  gulp.watch("*.html").on('change', browserSync.reload);
 }
 
-const scripts = () => {
-    return src('./frontend/src/scripts/app.js')
-        .pipe(terser())
-        .pipe(dest('./frontend/dist/scripts/'))
-}
-
-const watchTask = () => {
-    watch('./frontend/src/styles/**/*.scss', scss)
-    watch('./frontend/src/scripts/app.js', scripts)
-}
-
-exports.default = series(scss, scripts, watchTask);
+gulp.task('sass', sass);
+gulp.task('serve', gulp.series('sass', serve));
+gulp.task('default', gulp.series('sass', serve));

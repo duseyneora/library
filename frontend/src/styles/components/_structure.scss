@@ -1,5 +1,0 @@
-header {
-    @include flex(row, nowrap, space-between, center);
-    @include size(60px, 100%);
-    background-color: $primary-dark;
-}
